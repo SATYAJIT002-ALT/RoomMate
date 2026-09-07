@@ -1,0 +1,653 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum OccupationStatus {
+  STUDENT
+  WORKING_PROFESSIONAL
+  FREELANCER
+  OTHER
+}
+
+enum SleepSchedule {
+  EARLY_SLEEPER
+  NORMAL
+  NIGHT_OWL
+  IRREGULAR
+  FLEXIBLE
+}
+
+enum WakeUpSchedule {
+  EARLY_MORNING
+  MORNING
+  AFTERNOON
+  VARIABLE
+}
+
+enum NoiseTolerance {
+  VERY_QUIET
+  QUIET
+  MODERATE
+  DOESNT_MATTER
+}
+
+enum Frequency {
+  NEVER
+  RARELY
+  SOMETIMES
+  FREQUENTLY
+}
+
+enum FoodPreference {
+  VEGETARIAN
+  NON_VEGETARIAN
+  VEGAN
+  EGGETARIAN
+  NO_PREFERENCE
+  OTHER
+}
+
+enum SmokingHabit {
+  NEVER
+  OCCASIONALLY
+  FREQUENTLY
+}
+
+enum DrinkingHabit {
+  NEVER
+  OCCASIONALLY
+  SOCIALLY
+  FREQUENTLY
+}
+
+enum PetOwnership {
+  NO_PETS
+  HAVE_DOG
+  HAVE_CAT
+  HAVE_OTHER
+}
+
+enum SocialBehavior {
+  VERY_INTROVERTED
+  INTROVERTED
+  BALANCED
+  EXTROVERTED
+  VERY_EXTROVERTED
+}
+
+enum HousingType {
+  APARTMENT
+  PG
+  HOSTEL
+  FLAT
+  HOUSE
+  SHARED_APARTMENT
+  ANY
+}
+
+enum RoomType {
+  PRIVATE
+  SHARED
+  EITHER
+}
+
+enum FurnishingStatus {
+  FURNISHED
+  SEMI_FURNISHED
+  UNFURNISHED
+  ANY
+}
+
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  IGNORED
+}
+
+enum VerificationType {
+  EMAIL
+  PHONE
+  COLLEGE
+  COMPANY
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum GroupMemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum NotificationType {
+  INTEREST_RECEIVED
+  MUTUAL_MATCH
+  NEW_MESSAGE
+  MATCHING_ROOM
+  VERIFICATION_STATUS
+  LISTING_UPDATE
+  REPORT_UPDATE
+  GROUP_INVITE
+  SYSTEM
+}
+
+model User {
+  id                String            @id @default(uuid())
+  email             String            @unique
+  passwordHash      String
+  role              Role              @default(USER)
+  fullName          String
+  phone             String?
+  dateOfBirth       DateTime?
+  gender            Gender            @default(PREFER_NOT_TO_SAY)
+  city              String            @default("Kolkata")
+  avatarUrl         String?
+  
+  isEmailVerified   Boolean           @default(false)
+  isPhoneVerified   Boolean           @default(false)
+  isCollegeVerified Boolean           @default(false)
+  isSuspended       Boolean           @default(false)
+  isBanned          Boolean           @default(false)
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  lastLoginAt       DateTime?
+
+  // Relations
+  profile           Profile?
+  lifestyle         Lifestyle?
+  roommatePref      RoommatePreference?
+  dealBreakers      DealBreaker?
+  housingReq        HousingRequirement?
+  
+  // Listings created by this user
+  listings          RoomListing[]
+  
+  // Sent & Received Interest Requests
+  sentInterests     InterestRequest[] @relation("SentInterests")
+  receivedInterests InterestRequest[] @relation("ReceivedInterests")
+  
+  // Matches
+  matchesAsUser1    Match[]           @relation("MatchesUser1")
+  matchesAsUser2    Match[]           @relation("MatchesUser2")
+  
+  // Messages & Conversations
+  sentMessages      Message[]         @relation("SentMessages")
+  conversations     ConversationParticipant[]
+  
+  // Roommate Groups
+  createdGroups     RoommateGroup[]   @relation("CreatedGroups")
+  groupMemberships  RoommateGroupMember[]
+  
+  // Saved Items
+  savedRooms        SavedRoom[]
+  savedUsers        SavedUser[]       @relation("SavedUsers")
+  savedByOthers     SavedUser[]       @relation("SavedByOthers")
+  
+  // Reviews
+  writtenReviews    Review[]          @relation("WrittenReviews")
+  receivedReviews   Review[]          @relation("ReceivedReviews")
+  
+  // Reports
+  filedReports      Report[]          @relation("FiledReports")
+  reportsAgainst    Report[]          @relation("ReportsAgainst")
+  resolvedReports   Report[]          @relation("ResolvedReports")
+  
+  // Blocks
+  blockedUsers      Block[]           @relation("BlockerUsers")
+  blockedByOthers   Block[]           @relation("BlockedUsers")
+  
+  // Notifications
+  notifications     Notification[]
+  
+  // Verifications
+  verifications     Verification[]
+  reviewedVerifications Verification[] @relation("ReviewerVerifications")
+
+  @@index([email])
+  @@index([city])
+  @@index([role])
+}
+
+model Profile {
+  id                      String           @id @default(uuid())
+  userId                  String           @unique
+  user                    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bio                     String?
+  occupationStatus        OccupationStatus @default(STUDENT)
+  collegeName             String?
+  companyName             String?
+  preferredArea           String?
+  
+  // Personality traits array
+  personalityTraits       String[]         @default([])
+  preferredRoommateTraits  String[]         @default([])
+  
+  // Hobbies array
+  hobbies                 String[]         @default([])
+  
+  profileCompletion       Int              @default(20)
+  aiSummary               String?
+  
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+}
+
+model Lifestyle {
+  id               String          @id @default(uuid())
+  userId           String          @unique
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  sleepSchedule    SleepSchedule?
+  wakeUpSchedule   WakeUpSchedule?
+  cleanliness      Int?
+  noiseTolerance   NoiseTolerance?
+  guestFrequency   Frequency?
+  wfhOrStudy       Frequency?
+  cookingFrequency Frequency?
+  foodPreference   FoodPreference?
+  smokingHabit     SmokingHabit?
+  drinkingHabit    DrinkingHabit?
+  petOwnership     PetOwnership?
+  acUsage          Frequency?
+  socialBehavior   SocialBehavior?
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model RoommatePreference {
+  id                      String          @id @default(uuid())
+  userId                  String          @unique
+  user                    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Mutual gender comfort
+  preferredGender         String?
+  comfortableWithGender   String[]        @default(["MALE", "FEMALE", "OTHER"])
+  
+  preferredSleepSchedule  String?
+  preferredSmoking        String?
+  minCleanliness          Int?
+  preferredNoise          String?
+  preferredGuests         String?
+  preferredPets           String?
+  preferredFood           String?
+  preferredDrinking       String?
+  preferredOccupation     String?
+  
+  ageMin                  Int?            @default(18)
+  ageMax                  Int?            @default(40)
+  
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+}
+
+model DealBreaker {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  noSmoking             Boolean   @default(false)
+  noDrinking            Boolean   @default(false)
+  noPets                Boolean   @default(false)
+  noFrequentGuests      Boolean   @default(false)
+  noOppositeGender      Boolean   @default(false)
+  strictQuietHours      Boolean   @default(false)
+  strictCleanlinessMin  Int?      // e.g. 7 or null
+  vegetarianKitchenOnly Boolean   @default(false)
+  strictMaxBudget       Int?      // Upper limit dealbreaker
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model HousingRequirement {
+  id                String            @id @default(uuid())
+  userId            String            @unique
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  city              String            @default("Kolkata")
+  targetLocalities  String[]          @default([])
+  budgetMin         Int               @default(3000)
+  budgetMax         Int               @default(15000)
+  moveInDate        DateTime?
+  rentalDuration    String            @default("1 year") // Short-term, 3 months, 6 months, 1 year, Flexible
+  housingType       HousingType       @default(ANY)
+  roomType          RoomType          @default(EITHER)
+  requiredAmenities String[]          @default([])
+  furnishing        FurnishingStatus  @default(ANY)
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+}
+
+model RoomListing {
+  id                   String            @id @default(uuid())
+  userId               String
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title                String
+  description          String
+  photos               String[]          @default([])
+  city                 String
+  locality             String
+  approximateAddress   String
+  latitude             Float?
+  longitude            Float?
+  
+  monthlyRent          Int
+  securityDeposit      Int               @default(0)
+  roomCount            Int               @default(1)
+  currentRoommateCount Int               @default(0)
+  totalCapacity        Int               @default(1)
+  availableFrom        DateTime          @default(now())
+  
+  furnishing           FurnishingStatus  @default(SEMI_FURNISHED)
+  housingType          HousingType       @default(FLAT)
+  roomType             RoomType          @default(PRIVATE)
+  
+  amenities            String[]          @default([])
+  houseRules           String[]          @default([])
+  
+  preferredGender      String            @default("ANY") // MALE, FEMALE, ANY
+  preferredOccupation  String            @default("ANY") // STUDENT, WORKING_PROFESSIONAL, ANY
+  
+  isActive             Boolean           @default(true)
+  isFeatured           Boolean           @default(false)
+  
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  
+  savedBy              SavedRoom[]
+  reports              Report[]
+  reviews              Review[]
+
+  @@index([city])
+  @@index([locality])
+  @@index([monthlyRent])
+  @@index([isActive])
+}
+
+model InterestRequest {
+  id          String        @id @default(uuid())
+  senderId    String
+  sender      User          @relation("SentInterests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User          @relation("ReceivedInterests", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  status      RequestStatus @default(PENDING)
+  note        String?
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+model Match {
+  id                  String       @id @default(uuid())
+  user1Id             String
+  user1               User         @relation("MatchesUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2Id             String
+  user2               User         @relation("MatchesUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  
+  compatibilityScore  Float        // 0 - 100
+  lifestyleScore      Float        @default(0)
+  budgetLocationScore Float        @default(0)
+  personalityScore    Float        @default(0)
+  habitsScore         Float        @default(0)
+  hobbiesScore        Float        @default(0)
+  housingScore        Float        @default(0)
+  
+  strengths           String[]     @default([])
+  differences         String[]     @default([])
+  
+  status              MatchStatus  @default(ACCEPTED)
+  
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  isGroup      Boolean                   @default(false)
+  name         String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  lastReadAt     DateTime     @default(now())
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  content        String
+  imageUrl       String?
+  isRead         Boolean      @default(false)
+  
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model RoommateGroup {
+  id                String                @id @default(uuid())
+  name              String
+  creatorId         String
+  creator           User                  @relation("CreatedGroups", fields: [creatorId], references: [id], onDelete: Cascade)
+  description       String?
+  city              String                @default("Kolkata")
+  locality          String?
+  targetBudgetTotal Int?
+  targetMoveInDate  DateTime?
+  housingType       HousingType           @default(APARTMENT)
+  requiredBedrooms  Int                   @default(3)
+  
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  
+  members           RoommateGroupMember[]
+
+  @@index([city])
+}
+
+model RoommateGroupMember {
+  id       String          @id @default(uuid())
+  groupId  String
+  group    RoommateGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     GroupMemberRole @default(MEMBER)
+  joinedAt DateTime        @default(now())
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+model SavedRoom {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   RoomListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model SavedUser {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation("SavedUsers", fields: [userId], references: [id], onDelete: Cascade)
+  targetUserId String
+  targetUser   User     @relation("SavedByOthers", fields: [targetUserId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, targetUserId])
+  @@index([userId])
+}
+
+model Review {
+  id                   String       @id @default(uuid())
+  authorId             String
+  author               User         @relation("WrittenReviews", fields: [authorId], references: [id], onDelete: Cascade)
+  targetUserId         String?
+  targetUser           User?        @relation("ReceivedReviews", fields: [targetUserId], references: [id], onDelete: Cascade)
+  targetListingId      String?
+  targetListing        RoomListing? @relation(fields: [targetListingId], references: [id], onDelete: Cascade)
+  
+  cleanlinessRating    Int          @default(5)
+  communicationRating  Int          @default(5)
+  reliabilityRating    Int          @default(5)
+  respectfulnessRating Int          @default(5)
+  accuracyRating       Int          @default(5)
+  overallRating        Float        @default(5.0)
+  
+  content              String
+  createdAt            DateTime     @default(now())
+
+  @@index([authorId])
+  @@index([targetUserId])
+  @@index([targetListingId])
+}
+
+model Report {
+  id                String       @id @default(uuid())
+  reporterId        String
+  reporter          User         @relation("FiledReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId    String?
+  reportedUser      User?        @relation("ReportsAgainst", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reportedListingId String?
+  reportedListing   RoomListing? @relation(fields: [reportedListingId], references: [id], onDelete: Cascade)
+  
+  reason            String
+  description       String
+  status            ReportStatus @default(PENDING)
+  adminNotes        String?
+  
+  resolvedById      String?
+  resolvedBy        User?        @relation("ResolvedReports", fields: [resolvedById], references: [id])
+  resolvedAt        DateTime?
+  
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([status])
+  @@index([reporterId])
+  @@index([reportedUserId])
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blocker   User     @relation("BlockerUsers", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlockedUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType @default(SYSTEM)
+  title     String
+  message   String
+  linkUrl   String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model Verification {
+  id            String             @id @default(uuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          VerificationType
+  status        VerificationStatus @default(PENDING)
+  documentUrl   String?
+  instituteName String?
+  
+  reviewerId    String?
+  reviewer        User?              @relation("ReviewerVerifications", fields: [reviewerId], references: [id])
+  verifiedAt      DateTime?
+  
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
