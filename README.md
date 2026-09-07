@@ -1,6 +1,13 @@
 # RoomMate — Real-World Roommate & Shared-Housing Compatibility Platform
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-roommate--live.vercel.app-00dfa2?style=for-the-badge&logo=vercel)](https://roommate-live.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon_Cloud-336791?style=for-the-badge&logo=postgresql)](https://neon.tech/)
+
 > **“Find someone you can actually live with, not just someone looking for a room.”**
+
+🌐 **Live Application URL:** **[https://roommate-live.vercel.app](https://roommate-live.vercel.app)**  
+👑 **Admin Dashboard:** **[https://roommate-live.vercel.app/admin/login](https://roommate-live.vercel.app/admin/login)**
 
 RoomMate is a production-ready, real-world roommate and shared-housing platform designed for college students, interns, and young professionals in India.
 
